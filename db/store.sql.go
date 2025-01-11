@@ -11,15 +11,41 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteStore = `-- name: DeleteStore :one
+UPDATE store
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING id, name, created_at, updated_at, deleted_at
+`
+
+func (q *Queries) DeleteStore(ctx context.Context, id uuid.UUID) (Store, error) {
+	row := q.db.QueryRow(ctx, deleteStore, id)
+	var i Store
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getStoreByUUID = `-- name: GetStoreByUUID :one
-SELECT id, name FROM store
+SELECT id, name, created_at, updated_at, deleted_at FROM store
 WHERE id = $1
 `
 
 func (q *Queries) GetStoreByUUID(ctx context.Context, id uuid.UUID) (Store, error) {
 	row := q.db.QueryRow(ctx, getStoreByUUID, id)
 	var i Store
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
 	return i, err
 }
 
@@ -28,12 +54,38 @@ INSERT INTO store (
     id, name
 ) VALUES (
     $1, $2
-) RETURNING id, name
+) RETURNING id, name, created_at, updated_at, deleted_at
 `
 
 func (q *Queries) InsertNewStore(ctx context.Context, iD uuid.UUID, name string) (Store, error) {
 	row := q.db.QueryRow(ctx, insertNewStore, iD, name)
 	var i Store
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateStore = `-- name: UpdateStore :one
+UPDATE store
+SET name = $2
+WHERE id = $1
+RETURNING id, name, created_at, updated_at, deleted_at
+`
+
+func (q *Queries) UpdateStore(ctx context.Context, iD uuid.UUID, name string) (Store, error) {
+	row := q.db.QueryRow(ctx, updateStore, iD, name)
+	var i Store
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
 	return i, err
 }
