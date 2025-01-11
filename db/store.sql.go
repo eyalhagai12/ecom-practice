@@ -32,8 +32,8 @@ INSERT INTO store (
 `
 
 type InsertNewStoreParams struct {
-	ID   uuid.UUID
-	Name string
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
 
 func (q *Queries) InsertNewStore(ctx context.Context, arg InsertNewStoreParams) (Store, error) {

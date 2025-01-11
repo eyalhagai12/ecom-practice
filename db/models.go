@@ -9,6 +9,6 @@ import (
 )
 
 type Store struct {
-	ID   uuid.UUID
-	Name string
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
