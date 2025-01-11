@@ -8,15 +8,15 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  server:
-    build:
-      context: .
-      target: final
-    ports:
-      - 8080:8080
-    depends_on:
-      db:
-        condition: service_healthy
+  # server:
+  #   build:
+  #     context: .
+  #     target: final
+  #   ports:
+  #     - 8080:8080
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
 
   db:
     image: postgres
@@ -29,8 +29,8 @@ services:
     environment:
       - POSTGRES_USER=ecom
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-    expose:
-      - 5432
+    ports:
+      - 5432:5432
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 10s
@@ -42,5 +42,5 @@ volumes:
 
 secrets:
   db-password:
-    file: db/password.txt
+    file: secrets/db_password.txt
 

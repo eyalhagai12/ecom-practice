@@ -31,13 +31,8 @@ INSERT INTO store (
 ) RETURNING id, name
 `
 
-type InsertNewStoreParams struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
-}
-
-func (q *Queries) InsertNewStore(ctx context.Context, arg InsertNewStoreParams) (Store, error) {
-	row := q.db.QueryRow(ctx, insertNewStore, arg.ID, arg.Name)
+func (q *Queries) InsertNewStore(ctx context.Context, iD uuid.UUID, name string) (Store, error) {
+	row := q.db.QueryRow(ctx, insertNewStore, iD, name)
 	var i Store
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
