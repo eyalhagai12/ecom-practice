@@ -1,4 +1,4 @@
 secrets/
 scripts/
-*.env
+.env
 tmp/
