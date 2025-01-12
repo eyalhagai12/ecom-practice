@@ -9,6 +9,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Product struct {
+	ID        uuid.UUID        `json:"id"`
+	Name      string           `json:"name"`
+	Price     float64          `json:"price"`
+	CreatedAt pgtype.Timestamp `json:"createdAt"`
+	UpdatedAt pgtype.Timestamp `json:"updatedAt"`
+	DeletedAt pgtype.Timestamp `json:"deletedAt"`
+	StoreID   uuid.UUID        `json:"storeId"`
+}
+
 type Store struct {
 	ID        uuid.UUID        `json:"id"`
 	Name      string           `json:"name"`

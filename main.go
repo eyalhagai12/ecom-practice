@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"ecom/product"
 	"ecom/server"
 	"ecom/store"
 	"log"
@@ -21,6 +22,7 @@ func main() {
 
 	server.RegsiterHandlers(
 		store.RegisterHandlers,
+		product.RegisterHandlers,
 	)
 
 	err := server.Run()

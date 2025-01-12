@@ -11,13 +11,13 @@ import (
 )
 
 type GetStoreByUUIDRequest struct {
-	UUID uuid.UUID `param:"storeUuid"`
+	UUID string `param:"storeUuid"`
 }
 
 func GetStore(c echo.Context, env server.Env, request GetStoreByUUIDRequest) (db.Store, error) {
-	store, err := env.Queries.GetStoreByUUID(c.Request().Context(), request.UUID)
+	store, err := env.Queries.GetStoreByUUID(c.Request().Context(), uuid.MustParse(request.UUID))
 	if err != nil {
-		return db.Store{}, echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("failed to get store with uuid %s: %s", request.UUID.String(), err.Error()))
+		return db.Store{}, echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("failed to get store with uuid %s: %s", request.UUID, err.Error()))
 	}
 
 	return store, nil
@@ -51,7 +51,7 @@ func UpdateStore(c echo.Context, env server.Env, request UpdateStoreRequest) (db
 }
 
 func DeleteStore(c echo.Context, env server.Env, request GetStoreByUUIDRequest) (db.Store, error) {
-	store, err := env.Queries.DeleteStore(c.Request().Context(), request.UUID)
+	store, err := env.Queries.DeleteStore(c.Request().Context(), uuid.MustParse(request.UUID))
 	if err != nil {
 		return db.Store{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to delete store: %s", err.Error()))
 	}
