@@ -9,11 +9,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Inventory struct {
+	ID         uuid.UUID        `json:"id"`
+	ProductID  uuid.UUID        `json:"productId"`
+	Quantity   int32            `json:"quantity"`
+	LocationID int64            `json:"locationId"`
+	CreatedAt  pgtype.Timestamp `json:"createdAt"`
+	UpdatedAt  pgtype.Timestamp `json:"updatedAt"`
+	DeletedAt  pgtype.Timestamp `json:"deletedAt"`
+}
+
+type Location struct {
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+}
+
 type Product struct {
 	ID        uuid.UUID        `json:"id"`
 	Name      string           `json:"name"`
 	Price     float64          `json:"price"`
-	Quantity  int32            `json:"quantity"`
+	Quantity  *int32           `json:"quantity"`
 	CreatedAt pgtype.Timestamp `json:"createdAt"`
 	UpdatedAt pgtype.Timestamp `json:"updatedAt"`
 	DeletedAt pgtype.Timestamp `json:"deletedAt"`

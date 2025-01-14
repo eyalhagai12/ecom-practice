@@ -12,15 +12,14 @@ import (
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO product (id, name, price, quantity, store_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
+INSERT INTO product (id, name, price, store_id) VALUES ($1, $2, $3, $4) RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
 `
 
-func (q *Queries) CreateProduct(ctx context.Context, iD uuid.UUID, name string, price float64, quantity int32, storeID uuid.UUID) (Product, error) {
+func (q *Queries) CreateProduct(ctx context.Context, iD uuid.UUID, name string, price float64, storeID uuid.UUID) (Product, error) {
 	row := q.db.QueryRow(ctx, createProduct,
 		iD,
 		name,
 		price,
-		quantity,
 		storeID,
 	)
 	var i Product
@@ -110,17 +109,21 @@ func (q *Queries) GetStoreProducts(ctx context.Context, storeID uuid.UUID) ([]Pr
 	return items, nil
 }
 
-const updateProduct = `-- name: UpdateProduct :one
-UPDATE product SET name = $2, price = $3, quantity = $4 WHERE id = $1 RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
+const increaseProductQuantity = `-- name: IncreaseProductQuantity :exec
+UPDATE product SET quantity = quantity + $2 WHERE id = $1
 `
 
-func (q *Queries) UpdateProduct(ctx context.Context, iD uuid.UUID, name string, price float64, quantity int32) (Product, error) {
-	row := q.db.QueryRow(ctx, updateProduct,
-		iD,
-		name,
-		price,
-		quantity,
-	)
+func (q *Queries) IncreaseProductQuantity(ctx context.Context, iD uuid.UUID, quantity *int32) error {
+	_, err := q.db.Exec(ctx, increaseProductQuantity, iD, quantity)
+	return err
+}
+
+const updateProduct = `-- name: UpdateProduct :one
+UPDATE product SET name = $2, price = $3 WHERE id = $1 RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
+`
+
+func (q *Queries) UpdateProduct(ctx context.Context, iD uuid.UUID, name string, price float64) (Product, error) {
+	row := q.db.QueryRow(ctx, updateProduct, iD, name, price)
 	var i Product
 	err := row.Scan(
 		&i.ID,
