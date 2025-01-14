@@ -13,6 +13,7 @@ type Product struct {
 	ID        uuid.UUID        `json:"id"`
 	Name      string           `json:"name"`
 	Price     float64          `json:"price"`
+	Quantity  int32            `json:"quantity"`
 	CreatedAt pgtype.Timestamp `json:"createdAt"`
 	UpdatedAt pgtype.Timestamp `json:"updatedAt"`
 	DeletedAt pgtype.Timestamp `json:"deletedAt"`

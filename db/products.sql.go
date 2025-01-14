@@ -12,14 +12,15 @@ import (
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO product (id, name, price, store_id) VALUES ($1, $2, $3, $4) RETURNING id, name, price, created_at, updated_at, deleted_at, store_id
+INSERT INTO product (id, name, price, quantity, store_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
 `
 
-func (q *Queries) CreateProduct(ctx context.Context, iD uuid.UUID, name string, price float64, storeID uuid.UUID) (Product, error) {
+func (q *Queries) CreateProduct(ctx context.Context, iD uuid.UUID, name string, price float64, quantity int32, storeID uuid.UUID) (Product, error) {
 	row := q.db.QueryRow(ctx, createProduct,
 		iD,
 		name,
 		price,
+		quantity,
 		storeID,
 	)
 	var i Product
@@ -27,6 +28,7 @@ func (q *Queries) CreateProduct(ctx context.Context, iD uuid.UUID, name string, 
 		&i.ID,
 		&i.Name,
 		&i.Price,
+		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -36,7 +38,7 @@ func (q *Queries) CreateProduct(ctx context.Context, iD uuid.UUID, name string, 
 }
 
 const deleteProduct = `-- name: DeleteProduct :one
-UPDATE product SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, name, price, created_at, updated_at, deleted_at, store_id
+UPDATE product SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
 `
 
 func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) (Product, error) {
@@ -46,6 +48,7 @@ func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) (Product, err
 		&i.ID,
 		&i.Name,
 		&i.Price,
+		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -55,7 +58,7 @@ func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) (Product, err
 }
 
 const getProductByID = `-- name: GetProductByID :one
-SELECT id, name, price, created_at, updated_at, deleted_at, store_id FROM product WHERE id = $1
+SELECT id, name, price, quantity, created_at, updated_at, deleted_at, store_id FROM product WHERE id = $1
 `
 
 func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, error) {
@@ -65,6 +68,7 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 		&i.ID,
 		&i.Name,
 		&i.Price,
+		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -74,7 +78,7 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 }
 
 const getStoreProducts = `-- name: GetStoreProducts :many
-SELECT id, name, price, created_at, updated_at, deleted_at, store_id FROM product WHERE store_id = $1
+SELECT id, name, price, quantity, created_at, updated_at, deleted_at, store_id FROM product WHERE store_id = $1
 `
 
 func (q *Queries) GetStoreProducts(ctx context.Context, storeID uuid.UUID) ([]Product, error) {
@@ -90,6 +94,7 @@ func (q *Queries) GetStoreProducts(ctx context.Context, storeID uuid.UUID) ([]Pr
 			&i.ID,
 			&i.Name,
 			&i.Price,
+			&i.Quantity,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -106,16 +111,22 @@ func (q *Queries) GetStoreProducts(ctx context.Context, storeID uuid.UUID) ([]Pr
 }
 
 const updateProduct = `-- name: UpdateProduct :one
-UPDATE product SET name = $2, price = $3 WHERE id = $1 RETURNING id, name, price, created_at, updated_at, deleted_at, store_id
+UPDATE product SET name = $2, price = $3, quantity = $4 WHERE id = $1 RETURNING id, name, price, quantity, created_at, updated_at, deleted_at, store_id
 `
 
-func (q *Queries) UpdateProduct(ctx context.Context, iD uuid.UUID, name string, price float64) (Product, error) {
-	row := q.db.QueryRow(ctx, updateProduct, iD, name, price)
+func (q *Queries) UpdateProduct(ctx context.Context, iD uuid.UUID, name string, price float64, quantity int32) (Product, error) {
+	row := q.db.QueryRow(ctx, updateProduct,
+		iD,
+		name,
+		price,
+		quantity,
+	)
 	var i Product
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Price,
+		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,

@@ -14,13 +14,17 @@ type GetStoreProductsRequest struct {
 	StoreUUID string `param:"storeUuid"`
 }
 
-func GetStoreProducts(c echo.Context, env server.Env, request GetStoreProductsRequest) (echo.Map, error) {
+type GetStoreProductsResponse struct {
+	Products []db.Product `json:"products"`
+}
+
+func GetStoreProducts(c echo.Context, env server.Env, request GetStoreProductsRequest) (GetStoreProductsResponse, error) {
 	products, err := env.Queries.GetStoreProducts(c.Request().Context(), uuid.MustParse(request.StoreUUID))
 	if err != nil {
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to get products for store with uuid %s: %s", request.StoreUUID, err.Error()))
+		return GetStoreProductsResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to get products for store with uuid %s: %s", request.StoreUUID, err.Error()))
 	}
 
-	return echo.Map{"products": products}, nil
+	return GetStoreProductsResponse{Products: products}, nil
 }
 
 type GetProductByUUIDRequest struct {
@@ -37,13 +41,14 @@ func GetProductByUUID(c echo.Context, env server.Env, request GetProductByUUIDRe
 }
 
 type NewProductRequest struct {
-	Name    string    `json:"name"`
-	Price   float64   `json:"price"`
-	StoreID uuid.UUID `json:"storeUuid"`
+	Name     string    `json:"name"`
+	Price    float64   `json:"price"`
+	Quantity int32     `json:"quantity"`
+	StoreID  uuid.UUID `json:"storeUuid"`
 }
 
 func NewProduct(c echo.Context, env server.Env, request NewProductRequest) (db.Product, error) {
-	product, err := env.Queries.CreateProduct(c.Request().Context(), uuid.New(), request.Name, request.Price, request.StoreID)
+	product, err := env.Queries.CreateProduct(c.Request().Context(), uuid.New(), request.Name, request.Price, request.Quantity, request.StoreID)
 	if err != nil {
 		return db.Product{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to create product: %s", err.Error()))
 	}
@@ -52,13 +57,14 @@ func NewProduct(c echo.Context, env server.Env, request NewProductRequest) (db.P
 }
 
 type UpdateProductRequest struct {
-	ID    string  `param:"productUuid"`
-	Name  string  `json:"name"`
-	Price float64 `json:"price"`
+	ID       string  `param:"productUuid"`
+	Name     string  `json:"name"`
+	Price    float64 `json:"price"`
+	Quantity int32   `json:"quantity"`
 }
 
 func UpdateProduct(c echo.Context, env server.Env, request UpdateProductRequest) (db.Product, error) {
-	product, err := env.Queries.UpdateProduct(c.Request().Context(), uuid.MustParse(request.ID), request.Name, request.Price)
+	product, err := env.Queries.UpdateProduct(c.Request().Context(), uuid.MustParse(request.ID), request.Name, request.Price, request.Quantity)
 	if err != nil {
 		return db.Product{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to update product: %s", err.Error()))
 	}
