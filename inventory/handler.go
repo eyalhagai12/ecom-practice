@@ -49,21 +49,29 @@ type NewInventoryReqeust struct {
 
 func NewInventory(c echo.Context, env server.Env, request NewInventoryReqeust) (db.Inventory, error) {
 	// todo: Use transaction here!!!
+	tx, err := env.DB.Begin(c.Request().Context())
+	if err != nil {
+		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to start transaction: %s", err.Error()))
+	}
 
-	location, err := env.Queries.CreateLocation(c.Request().Context(), request.Location.Name, request.Location.Address)
+	txQueries := env.Queries.WithTx(tx)
+	defer tx.Rollback(c.Request().Context())
+
+	location, err := txQueries.CreateLocation(c.Request().Context(), request.Location.Name, request.Location.Address)
 	if err != nil {
 		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to create location: %s", err.Error()))
 	}
 
-	inventory, err := env.Queries.CreateInventory(c.Request().Context(), uuid.New(), request.ProductID, request.Quantity, location.ID)
+	inventory, err := txQueries.CreateInventory(c.Request().Context(), uuid.New(), request.ProductID, request.Quantity, location.ID)
 	if err != nil {
 		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to create inventory: %s", err.Error()))
 	}
 
-	if err := env.Queries.IncreaseProductQuantity(c.Request().Context(), request.ProductID, &request.Quantity); err != nil {
+	if err := txQueries.IncreaseProductQuantity(c.Request().Context(), request.ProductID, &request.Quantity); err != nil {
 		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to increase product quantity: %s", err.Error()))
 	}
 
+	tx.Commit(c.Request().Context())
 	return inventory, nil
 }
 
