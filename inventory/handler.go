@@ -48,7 +48,6 @@ type NewInventoryReqeust struct {
 }
 
 func NewInventory(c echo.Context, env server.Env, request NewInventoryReqeust) (db.Inventory, error) {
-	// todo: Use transaction here!!!
 	tx, err := env.DB.Begin(c.Request().Context())
 	if err != nil {
 		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to start transaction: %s", err.Error()))
@@ -71,7 +70,10 @@ func NewInventory(c echo.Context, env server.Env, request NewInventoryReqeust) (
 		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to increase product quantity: %s", err.Error()))
 	}
 
-	tx.Commit(c.Request().Context())
+	if err := tx.Commit(c.Request().Context()); err != nil {
+		return db.Inventory{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to commit transaction: %s", err.Error()))
+	}
+	
 	return inventory, nil
 }
 
