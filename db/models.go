@@ -17,7 +17,7 @@ type OrderStatus string
 const (
 	OrderStatusPending    OrderStatus = "pending"
 	OrderStatusProcessing OrderStatus = "processing"
-	OrderStatusShipped    OrderStatus = "shipped"
+	OrderStatusShipping   OrderStatus = "shipping"
 	OrderStatusDelivered  OrderStatus = "delivered"
 	OrderStatusCancelled  OrderStatus = "cancelled"
 )
@@ -55,6 +55,51 @@ func (ns NullOrderStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.OrderStatus), nil
+}
+
+type ShippingStatus string
+
+const (
+	ShippingStatusPending   ShippingStatus = "pending"
+	ShippingStatusCollected ShippingStatus = "collected"
+	ShippingStatusShippping ShippingStatus = "shippping"
+	ShippingStatusDelivered ShippingStatus = "delivered"
+	ShippingStatusCancelled ShippingStatus = "cancelled"
+)
+
+func (e *ShippingStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ShippingStatus(s)
+	case string:
+		*e = ShippingStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ShippingStatus: %T", src)
+	}
+	return nil
+}
+
+type NullShippingStatus struct {
+	ShippingStatus ShippingStatus `json:"shippingStatus"`
+	Valid          bool           `json:"valid"` // Valid is true if ShippingStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullShippingStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ShippingStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ShippingStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullShippingStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ShippingStatus), nil
 }
 
 type Inventory struct {
@@ -99,6 +144,15 @@ type Product struct {
 	UpdatedAt pgtype.Timestamp `json:"updatedAt"`
 	DeletedAt pgtype.Timestamp `json:"deletedAt"`
 	StoreID   uuid.UUID        `json:"storeId"`
+}
+
+type Shipping struct {
+	ID        uuid.UUID        `json:"id"`
+	Status    ShippingStatus   `json:"status"`
+	OrderID   uuid.UUID        `json:"orderId"`
+	CreatedAt pgtype.Timestamp `json:"createdAt"`
+	UpdatedAt pgtype.Timestamp `json:"updatedAt"`
+	DeletedAt pgtype.Timestamp `json:"deletedAt"`
 }
 
 type Store struct {

@@ -3,7 +3,7 @@
 CREATE TYPE order_status AS ENUM (
   'pending',
   'processing',
-  'shipped',
+  'shipping',
   'delivered',
   'cancelled'
 );
@@ -29,6 +29,6 @@ CREATE TABLE IF NOT EXISTS order_item (
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS order_item;
-DROP TABLE IF EXISTS order;
-DROP ENUM order_status;
+DROP TABLE IF EXISTS "order";
+DROP TYPE order_status;
 -- +goose StatementEnd

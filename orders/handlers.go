@@ -1,8 +1,10 @@
 package orders
 
 import (
+	"context"
 	"ecom/db"
 	"ecom/server"
+	"ecom/shipping"
 	"fmt"
 	"net/http"
 
@@ -103,11 +105,52 @@ func NewOrder(c echo.Context, env server.Env, request NewOrderRequest) (db.Order
 		}
 	}
 
+	// think how to add cancel context here, not sure if i need but i should consider it
+	_, err = startShippingProcess(c.Request().Context(), txQueries, env.Queries, order.ID)
+	if err != nil {
+		return db.Order{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to start shipping process: %s", err.Error()))
+	}
+
 	if err := tx.Commit(c.Request().Context()); err != nil {
 		return db.Order{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to commit transaction: %s", err.Error()))
 	}
 
 	return order, nil
+}
+
+func startShippingProcess(ctx context.Context, txQueries *db.Queries, queries *db.Queries, orderID uuid.UUID) (shipping.ShippingProcess, error) {
+	shippingToOrderStatus := map[db.ShippingStatus]db.OrderStatus{
+		db.ShippingStatusDelivered: db.OrderStatusDelivered,
+		db.ShippingStatusCancelled: db.OrderStatusCancelled,
+		db.ShippingStatusPending:   db.OrderStatusPending,
+	}
+
+	shippingProcess, err := shipping.CreateShippingProcess(ctx, queries, txQueries, orderID)
+	if err != nil {
+		return shipping.ShippingProcess{}, err
+	}
+
+	go func(ctx context.Context) {
+		for {
+			select {
+			case status := <-shippingProcess.StatusUpdates:
+				orderStatus, ok := shippingToOrderStatus[status]
+				if !ok {
+					continue
+				}
+
+				if _, err := queries.UpdateOrderStatus(ctx, orderID, orderStatus); err != nil {
+					fmt.Printf("failed to update order status: %s\n", err.Error())
+					return
+				}
+			case err := <-shippingProcess.Errs:
+				fmt.Printf("failed to update shipping status: %s\n", err.Error())
+				return
+			}
+		}
+	}(context.Background())
+
+	return shippingProcess, nil
 }
 
 func CancelOrder(c echo.Context, env server.Env, request GetOrderByUUIDRequest) (db.Order, error) {
@@ -135,10 +178,6 @@ func CancelOrder(c echo.Context, env server.Env, request GetOrderByUUIDRequest) 
 
 	if order.Status == db.OrderStatusDelivered {
 		return db.Order{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("order with uuid %s is already delivered", request.OrderUUID))
-	}
-
-	if order.Status == db.OrderStatusShipped {
-		return db.Order{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("order with uuid %s is already shipped", request.OrderUUID))
 	}
 
 	order, err = txQueries.UpdateOrderStatus(c.Request().Context(), order.ID, db.OrderStatusCancelled)
